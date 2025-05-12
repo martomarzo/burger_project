@@ -6,17 +6,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sandwich, UserCircle } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sandwich, UserCircle, ArrowLeft, PackageCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BurgerCreatorProps {
   availableToppings: Topping[];
   addBurger: (burger: Burger) => void;
+  onGoBack: () => void;
+  onOrderReady: () => void;
 }
 
-const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBurger }) => {
+const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBurger, onGoBack, onOrderReady }) => {
   const [personName, setPersonName] = useState('');
   const [selectedToppings, setSelectedToppings] = useState<Topping[]>([]);
   const { toast } = useToast();
@@ -27,20 +29,20 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
     );
   };
 
-  const handleCreateBurger = (e: React.FormEvent) => {
+  const handleCreateAndAddAnotherBurger = (e: React.FormEvent) => {
     e.preventDefault();
     if (!personName.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please enter a name for the burger.',
+        title: 'Missing Name',
+        description: "Please enter a name for the person this burger is for.",
         variant: 'destructive',
       });
       return;
     }
     if (selectedToppings.length === 0) {
       toast({
-        title: 'Error',
-        description: 'Please select at least one topping.',
+        title: 'No Toppings Selected',
+        description: 'A burger must have at least one topping. Please select toppings.',
         variant: 'destructive',
       });
       return;
@@ -53,17 +55,15 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
     };
 
     addBurger(newBurger);
+    
+    toast({
+      title: 'Burger Added!',
+      description: `Burger for ${newBurger.personName} added to the order. Add another or finalize order.`,
+    });
+
+    // Reset form for next burger
     setPersonName('');
     setSelectedToppings([]);
-    // Uncheck all checkboxes - this is a bit manual. A form library would help here.
-    // For now, relying on state reset.
-    document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][data-topping-checkbox]').forEach(cb => cb.checked = false);
-
-
-    toast({
-      title: 'Burger Built!',
-      description: `Burger for ${newBurger.personName} is ready to be served.`,
-    });
   };
 
   return (
@@ -71,12 +71,12 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <Sandwich className="h-6 w-6 text-primary" />
-          Create Burger
+          Create Burgers
         </CardTitle>
-        <CardDescription>Build a custom burger for someone.</CardDescription>
+        <CardDescription>Build custom burgers one by one. Add them to the current order.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleCreateBurger} className="space-y-6">
+        <form onSubmit={handleCreateAndAddAnotherBurger} className="space-y-6">
           <div>
             <Label htmlFor="personName" className="flex items-center gap-2 mb-2 font-medium">
               <UserCircle className="h-5 w-5 text-muted-foreground" />
@@ -95,7 +95,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
           <div>
             <Label className="block mb-2 font-medium">Select Toppings:</Label>
             {availableToppings.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No toppings available. Please add toppings first.</p>
+              <p className="text-sm text-muted-foreground">No toppings available. Please go back and add toppings first.</p>
             ) : (
               <ScrollArea className="h-48 rounded-md border p-3 shadow-inner bg-background/50">
                 <div className="space-y-3">
@@ -105,7 +105,6 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
                         id={`topping-${topping.id}`}
                         checked={selectedToppings.some(st => st.id === topping.id)}
                         onCheckedChange={(checked) => handleToppingChange(topping, !!checked)}
-                        data-topping-checkbox
                         aria-labelledby={`label-topping-${topping.id}`}
                       />
                       <Label htmlFor={`topping-${topping.id}`} id={`label-topping-${topping.id}`} className="text-sm font-normal cursor-pointer">
@@ -117,11 +116,23 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
               </ScrollArea>
             )}
           </div>
-          <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-3" disabled={availableToppings.length === 0}>
-            <Sandwich className="mr-2 h-5 w-5" /> Build This Burger!
+          <Button 
+            type="submit" 
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg py-3" 
+            disabled={availableToppings.length === 0}
+          >
+            <Sandwich className="mr-2 h-5 w-5" /> Add This Burger to Order
           </Button>
         </form>
       </CardContent>
+      <CardFooter className="pt-6 flex flex-col sm:flex-row justify-between gap-3">
+        <Button variant="outline" onClick={onGoBack} className="w-full sm:w-auto">
+          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Toppings
+        </Button>
+        <Button onClick={onOrderReady} className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+          Order Ready <PackageCheck className="ml-2 h-4 w-4" />
+        </Button>
+      </CardFooter>
     </Card>
   );
 };

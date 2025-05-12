@@ -4,17 +4,18 @@ import type { Topping } from '@/lib/types';
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { PlusCircle, Trash2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 interface ToppingManagerProps {
   availableToppings: Topping[];
   setAvailableToppings: (toppings: Topping[] | ((prev: Topping[]) => Topping[])) => void;
+  onNext: () => void;
 }
 
-const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setAvailableToppings }) => {
+const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setAvailableToppings, onNext }) => {
   const [newToppingName, setNewToppingName] = useState('');
   const { toast } = useToast();
 
@@ -68,7 +69,7 @@ const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setA
           <PlusCircle className="h-6 w-6 text-primary" />
           Manage Toppings
         </CardTitle>
-        <CardDescription>Add or remove available burger toppings.</CardDescription>
+        <CardDescription>Add or remove available burger toppings. Once done, click Next.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleAddTapping} className="space-y-4">
@@ -109,6 +110,11 @@ const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setA
           )}
         </div>
       </CardContent>
+      <CardFooter className="pt-6">
+        <Button onClick={onNext} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-3" disabled={availableToppings.length === 0}>
+          Next: Create Burgers <ArrowRight className="ml-2 h-5 w-5" />
+        </Button>
+      </CardFooter>
     </Card>
   );
 };
