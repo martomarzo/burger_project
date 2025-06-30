@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sandwich, UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Carrot } from 'lucide-react';
+import { UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import PattyIcon from './PattyIcon';
+import BurgerIcon from './BurgerIcon';
 
 interface BurgerCreatorProps {
   availableIngredients: Ingredient[];
@@ -107,7 +108,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
   return (
     <Card className="shadow-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl"><Sandwich className="h-6 w-6 text-primary" />Create a Burger</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-xl"><BurgerIcon className="h-6 w-6 text-primary" />Create a Burger</CardTitle>
         <CardDescription>Assemble a burger by choosing a bun, patty, and toppings.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -173,7 +174,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
           </ScrollArea>
           
           <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg py-3">
-            <Sandwich className="mr-2 h-5 w-5" /> Add This Burger to Order
+            <BurgerIcon className="mr-2 h-5 w-5" /> Add This Burger to Order
           </Button>
         </form>
       </CardContent>

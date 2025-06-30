@@ -5,9 +5,10 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sandwich, CheckCircle2, Wheat, Carrot } from 'lucide-react';
+import { CheckCircle2, Wheat, Carrot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import PattyIcon from './PattyIcon';
+import BurgerIcon from './BurgerIcon';
 
 interface BurgerCardProps {
   burger: Burger;
@@ -28,7 +29,7 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl flex items-center gap-2">
-            <Sandwich className="h-6 w-6 text-primary" />
+            <BurgerIcon className="h-6 w-6 text-primary" />
             {burger.personName}'s Burger Order
           </CardTitle>
           <Button variant="ghost" size="icon" className="text-primary hover:text-primary/90" onClick={() => onRemove(burger.id)} aria-label={`Mark ${burger.personName}'s burger as delivered`}>
