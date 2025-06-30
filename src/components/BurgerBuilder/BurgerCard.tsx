@@ -5,8 +5,9 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sandwich, CheckCircle2, User, Wheat, Circle, Carrot } from 'lucide-react';
+import { Sandwich, CheckCircle2, Wheat, Carrot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import PattyIcon from './PattyIcon';
 
 interface BurgerCardProps {
   burger: Burger;
@@ -45,7 +46,7 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
 
         {/* Patty */}
         <div className="flex items-center gap-2">
-          <Circle className="h-4 w-4 text-muted-foreground fill-current" />
+          <PattyIcon className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">Patty:</span>
           <span className="text-sm">{burger.patty.name}</span>
           {burger.patty.quantity > 1 && <Badge variant="outline">x{burger.patty.quantity}</Badge>}

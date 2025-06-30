@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sandwich, UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Circle, Carrot } from 'lucide-react';
+import { Sandwich, UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import PattyIcon from './PattyIcon';
 
 interface BurgerCreatorProps {
   availableIngredients: Ingredient[];
@@ -120,7 +121,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
             {/* Buns Section */}
             <div>
               <Label className="flex items-center gap-2 mb-2 font-medium"><Wheat className="h-5 w-5 text-muted-foreground" />Choose a Bun</Label>
-              <RadioGroup value={selectedBunId ?? undefined} onValueChange={setSelectedBunId} className="grid grid-cols-2 gap-2">
+              <RadioGroup value={selectedBunId ?? ''} onValueChange={setSelectedBunId} className="grid grid-cols-2 gap-2">
                 {buns.map(bun => (
                   <Label key={bun.id} htmlFor={bun.id} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
                     <RadioGroupItem value={bun.id} id={bun.id} />
@@ -132,9 +133,9 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
 
             {/* Patties Section */}
             <div>
-              <Label className="flex items-center gap-2 mb-2 font-medium"><Circle className="h-5 w-5 text-muted-foreground fill-current" />Choose a Patty</Label>
+              <Label className="flex items-center gap-2 mb-2 font-medium"><PattyIcon className="h-5 w-5 text-muted-foreground" />Choose a Patty</Label>
               <div className="grid grid-cols-2 gap-2">
-                <RadioGroup value={selectedPattyId ?? undefined} onValueChange={handlePattySelection} className="contents">
+                <RadioGroup value={selectedPattyId ?? ''} onValueChange={handlePattySelection} className="contents">
                   {patties.map(patty => (
                     <Label key={patty.id} htmlFor={patty.id} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
                       <RadioGroupItem value={patty.id} id={patty.id} />
