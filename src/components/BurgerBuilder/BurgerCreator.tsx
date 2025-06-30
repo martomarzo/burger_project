@@ -1,6 +1,6 @@
 "use client";
 
-import type { Ingredient, Burger, BurgerTopping } from '@/lib/types';
+import type { Ingredient, Burger } from '@/lib/types';
 import React, { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,8 @@ interface BurgerCreatorProps {
 const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, addBurger, onGoBack, onOrderReady }) => {
   const [personName, setPersonName] = useState('');
   const [selectedBunId, setSelectedBunId] = useState<string | null>(null);
-  const [selectedPatty, setSelectedPatty] = useState<{id: string, quantity: number} | null>(null);
+  const [selectedPattyId, setSelectedPattyId] = useState<string | null>(null);
+  const [pattyQuantity, setPattyQuantity] = useState(1);
   const [toppingQuantities, setToppingQuantities] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
@@ -40,19 +41,18 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
   const resetForm = () => {
     setPersonName('');
     setSelectedBunId(null);
-    setSelectedPatty(null);
+    setSelectedPattyId(null);
+    setPattyQuantity(1);
     setToppingQuantities({});
   }
 
   const handlePattySelection = (pattyId: string) => {
-    setSelectedPatty({ id: pattyId, quantity: 1 });
+    setSelectedPattyId(pattyId);
+    setPattyQuantity(1); // Reset quantity to 1 when a new patty is selected
   };
   
   const handlePattyQuantityChange = (change: 1 | -1) => {
-    if (selectedPatty) {
-      const newQuantity = Math.max(1, selectedPatty.quantity + change);
-      setSelectedPatty({ ...selectedPatty, quantity: newQuantity });
-    }
+    setPattyQuantity(prev => Math.max(1, prev + change));
   };
 
   const handleToppingQuantityChange = (toppingId: string, change: 1 | -1) => {
@@ -80,8 +80,8 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
       toast({ title: 'Missing Bun', description: 'Please select a bun for the burger.', variant: 'destructive'});
       return;
     }
-    const pattyInfo = patties.find(p => p.id === selectedPatty?.id);
-    if (!pattyInfo || !selectedPatty) {
+    const pattyInfo = patties.find(p => p.id === selectedPattyId);
+    if (!pattyInfo) {
       toast({ title: 'Missing Patty', description: 'Please select a patty and quantity.', variant: 'destructive'});
       return;
     }
@@ -90,7 +90,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
       id: Date.now().toString(),
       personName: personName.trim(),
       bun,
-      patty: { ...pattyInfo, quantity: selectedPatty.quantity },
+      patty: { ...pattyInfo, quantity: pattyQuantity },
       toppings: Object.entries(toppingQuantities)
         .map(([id, quantity]) => {
           const toppingInfo = toppings.find(t => t.id === id)!;
@@ -134,7 +134,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
             <div>
               <Label className="flex items-center gap-2 mb-2 font-medium"><Circle className="h-5 w-5 text-muted-foreground fill-current" />Choose a Patty</Label>
               <div className="grid grid-cols-2 gap-2">
-                <RadioGroup value={selectedPatty?.id ?? undefined} onValueChange={handlePattySelection} className="contents">
+                <RadioGroup value={selectedPattyId ?? undefined} onValueChange={handlePattySelection} className="contents">
                   {patties.map(patty => (
                     <Label key={patty.id} htmlFor={patty.id} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
                       <RadioGroupItem value={patty.id} id={patty.id} />
@@ -143,11 +143,11 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
                   ))}
                 </RadioGroup>
               </div>
-              {selectedPatty && (
+              {selectedPattyId && (
                 <div className="flex items-center gap-2 mt-2 justify-center p-2 border rounded-md max-w-xs mx-auto">
                   <span className="font-medium">Quantity:</span>
                   <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePattyQuantityChange(-1)}><Minus className="h-4 w-4" /></Button>
-                  <span className="w-8 text-center font-medium text-lg">{selectedPatty.quantity}</span>
+                  <span className="w-8 text-center font-medium text-lg">{pattyQuantity}</span>
                   <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePattyQuantityChange(1)}><Plus className="h-4 w-4" /></Button>
                 </div>
               )}
