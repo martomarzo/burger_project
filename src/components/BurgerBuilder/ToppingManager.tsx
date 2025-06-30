@@ -1,65 +1,67 @@
 "use client";
 
-import type { Topping } from '@/lib/types';
-import React, { useState } from 'react';
+import type { Ingredient } from '@/lib/types';
+import React, { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2, ArrowRight } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowRight, Wheat, Beef, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface ToppingManagerProps {
-  availableToppings: Topping[];
-  setAvailableToppings: (toppings: Topping[] | ((prev: Topping[]) => Topping[])) => void;
+interface IngredientManagerProps {
+  availableIngredients: Ingredient[];
+  setAvailableIngredients: (ingredients: Ingredient[] | ((prev: Ingredient[]) => Ingredient[])) => void;
   onNext: () => void;
 }
 
-const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setAvailableToppings, onNext }) => {
-  const [newToppingName, setNewToppingName] = useState('');
+const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredients, setAvailableIngredients, onNext }) => {
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [newIngredientCategory, setNewIngredientCategory] = useState<'bun' | 'patty' | 'topping'>('topping');
   const { toast } = useToast();
 
-  const handleAddTapping = (e: React.FormEvent) => {
+  const handleAddIngredient = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newToppingName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Topping name cannot be empty.',
-        variant: 'destructive',
-      });
+    if (!newIngredientName.trim()) {
+      toast({ title: 'Error', description: 'Ingredient name cannot be empty.', variant: 'destructive' });
       return;
     }
-    if (availableToppings.some(t => t.name.toLowerCase() === newToppingName.trim().toLowerCase())) {
-      toast({
-        title: 'Error',
-        description: `Topping "${newToppingName.trim()}" already exists.`,
-        variant: 'destructive',
-      });
+    if (availableIngredients.some(i => i.name.toLowerCase() === newIngredientName.trim().toLowerCase())) {
+      toast({ title: 'Error', description: `Ingredient "${newIngredientName.trim()}" already exists.`, variant: 'destructive' });
       return;
     }
 
-    const newTopping: Topping = {
+    const newIngredient: Ingredient = {
       id: Date.now().toString(),
-      name: newToppingName.trim(),
+      name: newIngredientName.trim(),
+      category: newIngredientCategory,
     };
-    setAvailableToppings(prev => [...prev, newTopping]);
-    setNewToppingName('');
-    toast({
-      title: 'Success!',
-      description: `Topping "${newTopping.name}" added.`,
-    });
+    setAvailableIngredients(prev => [...prev, newIngredient].sort((a, b) => a.category.localeCompare(b.category)));
+    setNewIngredientName('');
+    toast({ title: 'Success!', description: `Ingredient "${newIngredient.name}" added to ${newIngredient.category}s.` });
   };
 
-  const handleDeleteTopping = (toppingId: string) => {
-    const toppingToDelete = availableToppings.find(t => t.id === toppingId);
-    setAvailableToppings(prev => prev.filter(t => t.id !== toppingId));
-    if (toppingToDelete) {
-      toast({
-        title: 'Topping Removed',
-        description: `Topping "${toppingToDelete.name}" has been removed.`,
-        variant: 'destructive'
-      });
+  const handleDeleteIngredient = (ingredientId: string) => {
+    const ingredientToDelete = availableIngredients.find(i => i.id === ingredientId);
+    setAvailableIngredients(prev => prev.filter(i => i.id !== ingredientId));
+    if (ingredientToDelete) {
+      toast({ title: 'Ingredient Removed', description: `"${ingredientToDelete.name}" has been removed.`, variant: 'destructive' });
     }
+  };
+
+  const groupedIngredients = useMemo(() => {
+    return availableIngredients.reduce((acc, ingredient) => {
+      (acc[ingredient.category] = acc[ingredient.category] || []).push(ingredient);
+      return acc;
+    }, {} as Record<Ingredient['category'], Ingredient[]>);
+  }, [availableIngredients]);
+
+  const categoryIcons = {
+    bun: <Wheat className="h-5 w-5 mr-2" />,
+    patty: <Beef className="h-5 w-5 mr-2" />,
+    topping: <Carrot className="h-5 w-5 mr-2" />,
   };
 
   return (
@@ -67,51 +69,66 @@ const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setA
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-xl">
           <PlusCircle className="h-6 w-6 text-primary" />
-          Manage Toppings
+          Manage Ingredients
         </CardTitle>
-        <CardDescription>Add or remove available burger toppings. Once done, click Next.</CardDescription>
+        <CardDescription>Add ingredients to their categories. You need at least one of each to continue.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleAddTapping} className="space-y-4">
-          <div className="flex gap-2">
+        <form onSubmit={handleAddIngredient} className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               type="text"
-              value={newToppingName}
-              onChange={(e) => setNewToppingName(e.target.value)}
-              placeholder="Enter topping name (e.g., Cheese)"
-              aria-label="New topping name"
+              value={newIngredientName}
+              onChange={(e) => setNewIngredientName(e.target.value)}
+              placeholder="Enter ingredient name"
+              aria-label="New ingredient name"
+              className="flex-grow"
             />
-            <Button type="submit" variant="default" size="icon" aria-label="Add topping">
+            <Select onValueChange={(value: any) => setNewIngredientCategory(value)} defaultValue="topping">
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bun">Bun</SelectItem>
+                <SelectItem value="patty">Patty</SelectItem>
+                <SelectItem value="topping">Topping</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button type="submit" variant="default" size="icon" aria-label="Add ingredient" className="w-full sm:w-auto">
               <PlusCircle />
             </Button>
           </div>
         </form>
-        <div className="mt-6 space-y-2">
-          <h4 className="font-medium text-md text-foreground/80">Available Toppings:</h4>
-          {availableToppings.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No toppings added yet. Add some above!</p>
+        <ScrollArea className="mt-6 h-[calc(100vh-28rem)]">
+          {Object.keys(groupedIngredients).length === 0 ? (
+            <p className="text-sm text-center py-8 text-muted-foreground">No ingredients added yet. Add some above!</p>
           ) : (
-            <ul className="space-y-2 max-h-60 overflow-y-auto pr-2">
-              {availableToppings.map((topping) => (
-                <li key={topping.id} className="flex items-center justify-between p-2 bg-background rounded-md shadow-sm hover:bg-muted/50 transition-colors duration-150">
-                  <Badge variant="secondary" className="text-sm">{topping.name}</Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive/80"
-                    onClick={() => handleDeleteTopping(topping.id)}
-                    aria-label={`Delete ${topping.name}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-6">
+              {(['bun', 'patty', 'topping'] as const).map(category =>
+                groupedIngredients[category]?.length > 0 && (
+                  <div key={category}>
+                    <h4 className="font-medium text-md text-foreground/80 mb-2 flex items-center capitalize">
+                      {categoryIcons[category]} {category}s
+                    </h4>
+                    <ul className="space-y-2 rounded-md border p-2 shadow-inner bg-background/50">
+                      {groupedIngredients[category].map((ingredient) => (
+                        <li key={ingredient.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
+                          <Badge variant="secondary" className="text-sm">{ingredient.name}</Badge>
+                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              )}
+            </div>
           )}
-        </div>
+        </ScrollArea>
       </CardContent>
       <CardFooter className="pt-6">
-        <Button onClick={onNext} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-3" disabled={availableToppings.length === 0}>
+        <Button onClick={onNext} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-3">
           Next: Create Burgers <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </CardFooter>
@@ -119,4 +136,4 @@ const ToppingManager: React.FC<ToppingManagerProps> = ({ availableToppings, setA
   );
 };
 
-export default ToppingManager;
+export default IngredientManager;

@@ -1,20 +1,20 @@
 "use client";
 
-import type { Topping, Burger } from '@/lib/types';
+import type { Ingredient, Burger } from '@/lib/types';
 import React, { useState } from 'react';
 import useLocalStorage from '@/hooks/useLocalStorage';
 import AppHeader from '@/components/BurgerBuilder/AppHeader';
-import ToppingManager from '@/components/BurgerBuilder/ToppingManager';
+import IngredientManager from '@/components/BurgerBuilder/ToppingManager';
 import BurgerCreator from '@/components/BurgerBuilder/BurgerCreator';
 import BurgerList from '@/components/BurgerBuilder/BurgerList';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from '@/hooks/use-toast';
 
 export default function BurgerBuilderPage() {
-  const [availableToppings, setAvailableToppings] = useLocalStorage<Topping[]>('burgerToppings', []);
+  const [availableIngredients, setAvailableIngredients] = useLocalStorage<Ingredient[]>('burgerIngredients', []);
   const [burgers, setBurgers] = useLocalStorage<Burger[]>('createdBurgers', []);
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(1); // 1: Toppings, 2: Create, 3: Summary
+  const [currentStep, setCurrentStep] = useState(1); // 1: Ingredients, 2: Create, 3: Summary
 
   const addBurger = (burger: Burger) => {
     setBurgers(prevBurgers => [...prevBurgers, burger]);
@@ -32,11 +32,15 @@ export default function BurgerBuilderPage() {
     }
   };
 
-  const handleNextFromToppings = () => {
-    if (availableToppings.length === 0) {
+  const handleNextFromIngredients = () => {
+    const hasBun = availableIngredients.some(i => i.category === 'bun');
+    const hasPatty = availableIngredients.some(i => i.category === 'patty');
+    const hasTopping = availableIngredients.some(i => i.category === 'topping');
+
+    if (!hasBun || !hasPatty || !hasTopping) {
       toast({
-        title: "No Toppings Available",
-        description: "Please add at least one topping before proceeding to create burgers.",
+        title: "Missing Ingredient Types",
+        description: "Please add at least one bun, one patty, and one topping to proceed.",
         variant: "destructive",
       });
       return;
@@ -44,7 +48,7 @@ export default function BurgerBuilderPage() {
     setCurrentStep(2);
   };
 
-  const handleBackToToppings = () => {
+  const handleBackToIngredients = () => {
     setCurrentStep(1);
   };
 
@@ -66,7 +70,7 @@ export default function BurgerBuilderPage() {
 
   const handleStartNewOrder = () => {
     setBurgers([]);
-    setAvailableToppings([]); // Clear toppings for a completely new order session
+    setAvailableIngredients([]);
     setCurrentStep(1);
     toast({
       title: "New Order Started",
@@ -80,21 +84,21 @@ export default function BurgerBuilderPage() {
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
         <div className="w-full">
           {currentStep === 1 && (
-            <div className="max-w-2xl mx-auto">
-              <ToppingManager 
-                availableToppings={availableToppings} 
-                setAvailableToppings={setAvailableToppings} 
-                onNext={handleNextFromToppings}
+            <div className="max-w-4xl mx-auto">
+              <IngredientManager 
+                availableIngredients={availableIngredients} 
+                setAvailableIngredients={setAvailableIngredients} 
+                onNext={handleNextFromIngredients}
               />
             </div>
           )}
 
           {currentStep === 2 && (
-            <div className="max-w-2xl mx-auto">
+            <div className="max-w-4xl mx-auto">
               <BurgerCreator 
-                availableToppings={availableToppings} 
+                availableIngredients={availableIngredients} 
                 addBurger={addBurger} 
-                onGoBack={handleBackToToppings} 
+                onGoBack={handleBackToIngredients} 
                 onOrderReady={handleOrderReady}
               />
             </div>
