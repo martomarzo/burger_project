@@ -17,12 +17,9 @@ const BurgerIcon = React.forwardRef<SVGSVGElement, React.SVGProps<SVGSVGElement>
       className={cn('h-6 w-6', className)}
       {...props}
     >
-      <path d="M21 11H3" />
-      <path d="M12 11C12 7.66667 10 4 6 4" />
-      <path d="M12 11C12 7.66667 14 4 18 4" />
-      <path d="M21 16H3" />
-      <path d="M12 16C12 19.3333 10 22 6 22" />
-      <path d="M12 16C12 19.3333 14 22 18 22" />
+      <path d="M12 4c-4.42 0-8 2.69-8 6h16c0-3.31-3.58-6-8-6z" />
+      <path d="M5 12h14" />
+      <path d="M12 20c4.42 0 8-2.69 8-6H4c0 3.31 3.58 6 8 6z" />
     </svg>
   )
 );
