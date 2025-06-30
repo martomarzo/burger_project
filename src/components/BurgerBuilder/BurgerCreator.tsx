@@ -1,13 +1,12 @@
 "use client";
 
-import type { Topping, Burger } from '@/lib/types';
+import type { Topping, Burger, BurgerTopping } from '@/lib/types';
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sandwich, UserCircle, ArrowLeft, PackageCheck } from 'lucide-react';
+import { Sandwich, UserCircle, ArrowLeft, PackageCheck, Plus, Minus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -20,15 +19,24 @@ interface BurgerCreatorProps {
 
 const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBurger, onGoBack, onOrderReady }) => {
   const [personName, setPersonName] = useState('');
-  const [selectedToppings, setSelectedToppings] = useState<Topping[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
-  const handleToppingChange = (topping: Topping, checked: boolean) => {
-    setSelectedToppings(prev =>
-      checked ? [...prev, topping] : prev.filter(t => t.id !== topping.id)
-    );
-  };
+  const handleQuantityChange = (toppingId: string, change: 1 | -1) => {
+    setQuantities(prev => {
+      const currentQuantity = prev[toppingId] || 0;
+      const newQuantity = Math.max(0, currentQuantity + change);
 
+      const newQuantities = { ...prev };
+      if (newQuantity === 0) {
+        delete newQuantities[toppingId];
+      } else {
+        newQuantities[toppingId] = newQuantity;
+      }
+      return newQuantities;
+    });
+  };
+  
   const handleCreateAndAddAnotherBurger = (e: React.FormEvent) => {
     e.preventDefault();
     if (!personName.trim()) {
@@ -39,10 +47,18 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
       });
       return;
     }
-    if (selectedToppings.length === 0) {
+
+    const toppingsForBurger: BurgerTopping[] = Object.entries(quantities)
+      .filter(([, quantity]) => quantity > 0)
+      .map(([toppingId, quantity]) => {
+        const topping = availableToppings.find(t => t.id === toppingId)!;
+        return { ...topping, quantity };
+      });
+    
+    if (toppingsForBurger.length === 0) {
       toast({
         title: 'No Toppings Selected',
-        description: 'A burger must have at least one topping. Please select toppings.',
+        description: 'A burger must have at least one topping. Please add some.',
         variant: 'destructive',
       });
       return;
@@ -51,7 +67,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
     const newBurger: Burger = {
       id: Date.now().toString(),
       personName: personName.trim(),
-      toppings: selectedToppings,
+      toppings: toppingsForBurger,
     };
 
     addBurger(newBurger);
@@ -63,7 +79,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
 
     // Reset form for next burger
     setPersonName('');
-    setSelectedToppings([]);
+    setQuantities({});
   };
 
   return (
@@ -97,19 +113,22 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableToppings, addBur
             {availableToppings.length === 0 ? (
               <p className="text-sm text-muted-foreground">No toppings available. Please go back and add toppings first.</p>
             ) : (
-              <ScrollArea className="h-48 rounded-md border p-3 shadow-inner bg-background/50">
+              <ScrollArea className="h-80 rounded-md border p-3 shadow-inner bg-background/50">
                 <div className="space-y-3">
                   {availableToppings.map((topping) => (
-                    <div key={topping.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
-                      <Checkbox
-                        id={`topping-${topping.id}`}
-                        checked={selectedToppings.some(st => st.id === topping.id)}
-                        onCheckedChange={(checked) => handleToppingChange(topping, !!checked)}
-                        aria-labelledby={`label-topping-${topping.id}`}
-                      />
-                      <Label htmlFor={`topping-${topping.id}`} id={`label-topping-${topping.id}`} className="text-sm font-normal cursor-pointer">
+                    <div key={topping.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
+                      <Label htmlFor={`topping-qty-${topping.id}`} className="text-sm font-normal cursor-pointer">
                         {topping.name}
                       </Label>
+                      <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(topping.id, -1)} aria-label={`Decrease quantity of ${topping.name}`}>
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span id={`topping-qty-${topping.id}`} className="w-8 text-center font-medium text-lg" aria-live="polite">{quantities[topping.id] || 0}</span>
+                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleQuantityChange(topping.id, 1)} aria-label={`Increase quantity of ${topping.name}`}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

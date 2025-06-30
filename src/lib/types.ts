@@ -3,8 +3,14 @@ export interface Topping {
   name: string;
 }
 
+export interface BurgerTopping {
+  id: string;
+  name: string;
+  quantity: number;
+}
+
 export interface Burger {
   id: string;
   personName: string;
-  toppings: Topping[];
+  toppings: BurgerTopping[];
 }

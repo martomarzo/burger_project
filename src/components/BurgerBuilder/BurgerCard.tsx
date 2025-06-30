@@ -1,6 +1,6 @@
 "use client";
 
-import type { Burger, Topping } from '@/lib/types';
+import type { Burger } from '@/lib/types';
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,8 +49,9 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
         {burger.toppings.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {burger.toppings.map((topping) => (
-              <Badge key={topping.id} variant={getToppingBadgeVariant(topping.name)} className="px-3 py-1 text-xs">
+              <Badge key={topping.id} variant={getToppingBadgeVariant(topping.name)} className="px-3 py-1 text-sm flex items-center">
                 {topping.name}
+                {topping.quantity > 1 && <span className="ml-1.5 opacity-80 text-xs font-semibold">(x{topping.quantity})</span>}
               </Badge>
             ))}
           </div>
