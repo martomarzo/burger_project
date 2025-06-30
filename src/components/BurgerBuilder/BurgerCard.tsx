@@ -5,7 +5,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sandwich, Trash2, User, Wheat, Beef, Carrot } from 'lucide-react';
+import { Sandwich, CheckCircle2, User, Wheat, Circle, Carrot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface BurgerCardProps {
@@ -28,16 +28,12 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
         <div className="flex items-center justify-between">
           <CardTitle className="text-xl flex items-center gap-2">
             <Sandwich className="h-6 w-6 text-primary" />
-            Burger Order
+            {burger.personName}'s Burger Order
           </CardTitle>
-          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => onRemove(burger.id)} aria-label={`Remove ${burger.personName}'s burger`}>
-            <Trash2 className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="text-primary hover:text-primary/90" onClick={() => onRemove(burger.id)} aria-label={`Mark ${burger.personName}'s burger as delivered`}>
+            <CheckCircle2 className="h-5 w-5" />
           </Button>
         </div>
-        <CardDescription className="flex items-center gap-1 pt-1">
-          <User className="h-4 w-4 text-muted-foreground" />
-          For: <span className="font-semibold text-foreground">{burger.personName}</span>
-        </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
         {/* Bun */}
@@ -49,7 +45,7 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
 
         {/* Patty */}
         <div className="flex items-center gap-2">
-          <Beef className="h-4 w-4 text-muted-foreground" />
+          <Circle className="h-4 w-4 text-muted-foreground fill-current" />
           <span className="font-medium">Patty:</span>
           <span className="text-sm">{burger.patty.name}</span>
           {burger.patty.quantity > 1 && <Badge variant="outline">x{burger.patty.quantity}</Badge>}

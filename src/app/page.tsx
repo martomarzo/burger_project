@@ -25,9 +25,8 @@ export default function BurgerBuilderPage() {
     setBurgers(prevBurgers => prevBurgers.filter(b => b.id !== burgerId));
     if (burgerToRemove) {
       toast({
-        title: 'Burger Removed',
-        description: `The order for ${burgerToRemove.personName} has been removed.`,
-        variant: 'destructive'
+        title: 'Order Delivered!',
+        description: `The order for ${burgerToRemove.personName} has been marked as delivered.`,
       });
     }
   };
@@ -52,6 +51,10 @@ export default function BurgerBuilderPage() {
     setCurrentStep(1);
   };
 
+  const handleBackToCreator = () => {
+    setCurrentStep(2);
+  };
+
   const handleOrderReady = () => {
      if (burgers.length === 0) {
       toast({
@@ -70,11 +73,10 @@ export default function BurgerBuilderPage() {
 
   const handleStartNewOrder = () => {
     setBurgers([]);
-    setAvailableIngredients([]);
     setCurrentStep(1);
     toast({
       title: "New Order Started",
-      description: "Previous order details cleared. Let's build some new burgers!",
+      description: "Previous order cleared. Let's build some new burgers!",
     });
   };
 
@@ -109,6 +111,7 @@ export default function BurgerBuilderPage() {
               burgers={burgers} 
               removeBurger={removeBurger} 
               onStartNewOrder={handleStartNewOrder}
+              onAddAnotherBurger={handleBackToCreator}
             />
           )}
         </div>

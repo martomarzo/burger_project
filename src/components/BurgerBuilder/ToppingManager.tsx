@@ -5,7 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { PlusCircle, Trash2, ArrowRight, Wheat, Beef, Carrot } from 'lucide-react';
+import { PlusCircle, Trash2, ArrowRight, Wheat, Circle, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -60,7 +60,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
 
   const categoryIcons = {
     bun: <Wheat className="h-5 w-5 mr-2" />,
-    patty: <Beef className="h-5 w-5 mr-2" />,
+    patty: <Circle className="h-5 w-5 mr-2 fill-current" />,
     topping: <Carrot className="h-5 w-5 mr-2" />,
   };
 

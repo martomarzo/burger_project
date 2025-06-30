@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sandwich, UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Beef, Carrot } from 'lucide-react';
+import { Sandwich, UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Circle, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -132,7 +132,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
 
             {/* Patties Section */}
             <div>
-              <Label className="flex items-center gap-2 mb-2 font-medium"><Beef className="h-5 w-5 text-muted-foreground" />Choose a Patty</Label>
+              <Label className="flex items-center gap-2 mb-2 font-medium"><Circle className="h-5 w-5 text-muted-foreground fill-current" />Choose a Patty</Label>
               <div className="grid grid-cols-2 gap-2">
                 <RadioGroup value={selectedPatty?.id ?? undefined} onValueChange={handlePattySelection} className="contents">
                   {patties.map(patty => (
