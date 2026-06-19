@@ -1,0 +1,30 @@
+services:
+  ts-burger-project:
+    image: tailscale/tailscale:latest
+    container_name: ts-burger-project
+    hostname: burger-project               # -> burger-project.<tailnet>.ts.net
+    restart: unless-stopped
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_HOSTNAME=burger-project
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=true                  # serve works in userspace, no tun device
+      - TS_SERVE_CONFIG=/config/serve.json
+    volumes:
+      - ts-burger-project-state:/var/lib/tailscale
+      - ./ts-serve.json:/config/serve.json:ro
+
+  burger-project:
+    build: .
+    container_name: burger-project
+    restart: unless-stopped
+    env_file: .env
+    network_mode: service:ts-burger-project # share sidecar netns -> serve reaches 127.0.0.1:8788
+    depends_on:
+      - ts-burger-project
+
+volumes:
+  ts-burger-project-state:
+# DB lives on the Postgres LXC via DATABASE_URL in .env (not a container here).
+# No ports: published — access is HTTPS-only over the tailnet. Add a ports:
+# block under ts-burger-sorter if you want raw LAN access too.

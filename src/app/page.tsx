@@ -2,7 +2,7 @@
 
 import type { Ingredient, Burger } from '@/lib/types';
 import React, { useState } from 'react';
-import useLocalStorage from '@/hooks/useLocalStorage';
+import useSyncedState from '@/hooks/useSyncedState';
 import AppHeader from '@/components/BurgerBuilder/AppHeader';
 import IngredientManager from '@/components/BurgerBuilder/ToppingManager';
 import BurgerCreator from '@/components/BurgerBuilder/BurgerCreator';
@@ -11,8 +11,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from '@/hooks/use-toast';
 
 export default function BurgerBuilderPage() {
-  const [availableIngredients, setAvailableIngredients] = useLocalStorage<Ingredient[]>('burgerIngredients', []);
-  const [burgers, setBurgers] = useLocalStorage<Burger[]>('createdBurgers', []);
+  const [availableIngredients, setAvailableIngredients] = useSyncedState<Ingredient[]>('burgerIngredients', [], 'ingredients');
+  const [burgers, setBurgers] = useSyncedState<Burger[]>('createdBurgers', [], 'burgers');
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1); // 1: Ingredients, 2: Create, 3: Summary
 

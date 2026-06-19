@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.env
+*.md
+.claude
+.vscode
+.idx
+.agents
+deploy
+Dockerfile
+docker-compose.yml

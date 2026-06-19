@@ -1,0 +1,10 @@
+[Unit]
+Description=Poll the burger-project repo and auto-deploy
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+Unit=burger-project-deploy.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,8 @@
+[Unit]
+Description=Auto-deploy burger-project from GitHub
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /root/containers/burger_project/deploy.sh

@@ -14,6 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={GeistSans.variable}>
+      <head>
+        {/* Runtime token injection so the app auto-connects to its API. */}
+        <script src="/config.js" />
+      </head>
       <body className="antialiased font-sans">
         {children}
       </body>
