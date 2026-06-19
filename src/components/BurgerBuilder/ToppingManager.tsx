@@ -9,7 +9,6 @@ import { PlusCircle, Trash2, ArrowRight, Wheat, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import PattyIcon from './PattyIcon';
 
 interface IngredientManagerProps {
@@ -100,7 +99,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
             </Button>
           </div>
         </form>
-        <ScrollArea className="mt-6 h-[calc(100vh-28rem)]">
+        <div className="mt-6 max-h-[55dvh] overflow-y-auto pr-1">
           {Object.keys(groupedIngredients).length === 0 ? (
             <p className="text-sm text-center py-8 text-muted-foreground">No ingredients added yet. Add some above!</p>
           ) : (
@@ -115,7 +114,7 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
                       {groupedIngredients[category].map((ingredient) => (
                         <li key={ingredient.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
                           <Badge variant="secondary" className="text-sm">{ingredient.name}</Badge>
-                          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
+                          <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </li>
@@ -126,10 +125,10 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </CardContent>
       <CardFooter className="pt-6">
-        <Button onClick={onNext} className="w-full bg-accent text-accent-foreground hover:bg-accent/90 text-lg py-3">
+        <Button onClick={onNext} size="lg" className="w-full text-base h-12">
           Next: Create Burgers <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </CardFooter>

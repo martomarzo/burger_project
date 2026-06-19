@@ -4,6 +4,7 @@ import type { Ingredient, Burger } from '@/lib/types';
 import React, { useState } from 'react';
 import useSyncedState from '@/hooks/useSyncedState';
 import AppHeader from '@/components/BurgerBuilder/AppHeader';
+import Stepper from '@/components/BurgerBuilder/Stepper';
 import IngredientManager from '@/components/BurgerBuilder/ToppingManager';
 import BurgerCreator from '@/components/BurgerBuilder/BurgerCreator';
 import BurgerList from '@/components/BurgerBuilder/BurgerList';
@@ -80,36 +81,39 @@ export default function BurgerBuilderPage() {
     });
   };
 
+  // Allow jumping back to an already-completed step via the stepper.
+  const handleStepClick = (step: number) => {
+    if (step < currentStep) setCurrentStep(step);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground antialiased">
       <AppHeader />
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="w-full">
+        <div className="w-full max-w-5xl mx-auto">
+          <Stepper currentStep={currentStep} onStepClick={handleStepClick} />
+
           {currentStep === 1 && (
-            <div className="max-w-4xl mx-auto">
-              <IngredientManager 
-                availableIngredients={availableIngredients} 
-                setAvailableIngredients={setAvailableIngredients} 
-                onNext={handleNextFromIngredients}
-              />
-            </div>
+            <IngredientManager
+              availableIngredients={availableIngredients}
+              setAvailableIngredients={setAvailableIngredients}
+              onNext={handleNextFromIngredients}
+            />
           )}
 
           {currentStep === 2 && (
-            <div className="max-w-4xl mx-auto">
-              <BurgerCreator 
-                availableIngredients={availableIngredients} 
-                addBurger={addBurger} 
-                onGoBack={handleBackToIngredients} 
-                onOrderReady={handleOrderReady}
-              />
-            </div>
+            <BurgerCreator
+              availableIngredients={availableIngredients}
+              addBurger={addBurger}
+              onGoBack={handleBackToIngredients}
+              onOrderReady={handleOrderReady}
+            />
           )}
 
           {currentStep === 3 && (
-            <BurgerList 
-              burgers={burgers} 
-              removeBurger={removeBurger} 
+            <BurgerList
+              burgers={burgers}
+              removeBurger={removeBurger}
               onStartNewOrder={handleStartNewOrder}
               onAddAnotherBurger={handleBackToCreator}
             />

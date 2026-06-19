@@ -17,14 +17,14 @@ body {
     --popover: 35 50% 98%; /* Very Light Beige for popovers */
     --popover-foreground: 30 25% 15%;
 
-    --primary: 30 27% 52%; /* Earthy Brown #A68B64 */
+    --primary: 30 33% 40%; /* Earthy Brown, darkened for AA contrast on white text */
     --primary-foreground: 40 30% 98%; /* Light color for text on primary */
 
     --secondary: 46 100% 70%; /* Yellow #FFDA63 */
     --secondary-foreground: 45 100% 20%; /* Darker color for text on yellow */
 
     --muted: 30 30% 85%; /* Muted earthy tone */
-    --muted-foreground: 30 25% 45%;
+    --muted-foreground: 30 25% 38%; /* darker for readable small text (AA) */
 
     --accent: 198 100% 73%; /* Teal #76D4FF */
     --accent-foreground: 198 100% 15%; /* Darker Teal for text on accent */
@@ -65,7 +65,7 @@ body {
     --popover: 30 25% 5%; /* Very Dark Brown for popovers */
     --popover-foreground: 35 50% 90%;
 
-    --primary: 30 27% 52%; /* Earthy Brown #A68B64 - can remain same or be adjusted */
+    --primary: 30 30% 46%; /* Earthy Brown, lifted slightly for dark surfaces */
     --primary-foreground: 40 30% 98%;
 
     --secondary: 46 100% 70%; /* Yellow #FFDA63 */

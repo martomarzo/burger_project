@@ -8,10 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCircle, ArrowLeft, PackageCheck, Plus, Minus, Wheat, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import PattyIcon from './PattyIcon';
 import BurgerIcon from './BurgerIcon';
+import BurgerPreview, { type PreviewTopping } from './BurgerPreview';
 
 interface BurgerCreatorProps {
   availableIngredients: Ingredient[];
@@ -39,20 +39,34 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
       toppings: grouped.topping || [],
     };
   }, [availableIngredients]);
-  
+
+  // Resolved selections drive the live preview.
+  const selectedBun = buns.find(b => b.id === selectedBunId) || null;
+  const selectedPatty = patties.find(p => p.id === selectedPattyId) || null;
+  const previewToppings = useMemo<PreviewTopping[]>(
+    () =>
+      Object.entries(toppingQuantities)
+        .map(([id, quantity]) => {
+          const t = toppings.find(tp => tp.id === id);
+          return t ? { id, name: t.name, quantity } : null;
+        })
+        .filter(Boolean) as PreviewTopping[],
+    [toppingQuantities, toppings]
+  );
+
   const resetForm = () => {
     setPersonName('');
     setSelectedBunId(null);
     setSelectedPattyId(null);
     setPattyQuantity(1);
     setToppingQuantities({});
-  }
+  };
 
   const handlePattySelection = (pattyId: string) => {
     setSelectedPattyId(pattyId);
     setPattyQuantity(1); // Reset quantity to 1 when a new patty is selected
   };
-  
+
   const handlePattyQuantityChange = (change: 1 | -1) => {
     setPattyQuantity(prev => Math.max(1, prev + change));
   };
@@ -70,7 +84,7 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
       return newQuantities;
     });
   };
-  
+
   const handleCreateAndAddAnotherBurger = (e: React.FormEvent) => {
     e.preventDefault();
     if (!personName.trim()) {
@@ -106,83 +120,109 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-xl"><BurgerIcon className="h-6 w-6 text-primary" />Create a Burger</CardTitle>
-        <CardDescription>Assemble a burger by choosing a bun, patty, and toppings.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleCreateAndAddAnotherBurger} className="space-y-6">
-          <div>
-            <Label htmlFor="personName" className="flex items-center gap-2 mb-2 font-medium"><UserCircle className="h-5 w-5 text-muted-foreground" />Burger For (Name):</Label>
-            <Input id="personName" type="text" value={personName} onChange={(e) => setPersonName(e.target.value)} placeholder="e.g., Jane Doe" />
-          </div>
-
-          <ScrollArea className="h-[calc(100vh-30rem)] space-y-6 pr-4">
-            {/* Buns Section */}
+    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-6 lg:items-start">
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl"><BurgerIcon className="h-6 w-6 text-primary" />Create a Burger</CardTitle>
+          <CardDescription>Assemble a burger by choosing a bun, patty, and toppings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleCreateAndAddAnotherBurger} className="space-y-6">
             <div>
-              <Label className="flex items-center gap-2 mb-2 font-medium"><Wheat className="h-5 w-5 text-muted-foreground" />Choose a Bun</Label>
-              <RadioGroup value={selectedBunId ?? ''} onValueChange={setSelectedBunId} className="grid grid-cols-2 gap-2">
-                {buns.map(bun => (
-                  <Label key={bun.id} htmlFor={bun.id} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
-                    <RadioGroupItem value={bun.id} id={bun.id} />
-                    <span>{bun.name}</span>
-                  </Label>
-                ))}
-              </RadioGroup>
+              <Label htmlFor="personName" className="flex items-center gap-2 mb-2 font-medium"><UserCircle className="h-5 w-5 text-muted-foreground" />Burger For (Name):</Label>
+              <Input id="personName" type="text" value={personName} onChange={(e) => setPersonName(e.target.value)} placeholder="e.g., Jane Doe" className="h-11" />
             </div>
 
-            {/* Patties Section */}
-            <div>
-              <Label className="flex items-center gap-2 mb-2 font-medium"><PattyIcon className="h-5 w-5 text-muted-foreground" />Choose a Patty</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <RadioGroup value={selectedPattyId ?? ''} onValueChange={handlePattySelection} className="contents">
-                  {patties.map(patty => (
-                    <Label key={patty.id} htmlFor={patty.id} className="flex items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
-                      <RadioGroupItem value={patty.id} id={patty.id} />
-                      <span>{patty.name}</span>
+            {/* Live preview — shown inline on mobile, in the sidebar on desktop */}
+            <BurgerPreview
+              className="lg:hidden"
+              personName={personName}
+              bunName={selectedBun?.name}
+              pattyName={selectedPatty?.name}
+              pattyQuantity={pattyQuantity}
+              toppings={previewToppings}
+            />
+
+            <div className="space-y-6">
+              {/* Buns Section */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 font-medium"><Wheat className="h-5 w-5 text-muted-foreground" />Choose a Bun</Label>
+                <RadioGroup value={selectedBunId ?? ''} onValueChange={setSelectedBunId} className="grid grid-cols-2 gap-2">
+                  {buns.map(bun => (
+                    <Label key={bun.id} htmlFor={bun.id} className="flex min-h-[44px] items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
+                      <RadioGroupItem value={bun.id} id={bun.id} />
+                      <span>{bun.name}</span>
                     </Label>
                   ))}
                 </RadioGroup>
               </div>
-              {selectedPattyId && (
-                <div className="flex items-center gap-2 mt-2 justify-center p-2 border rounded-md max-w-xs mx-auto">
-                  <span className="font-medium">Quantity:</span>
-                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePattyQuantityChange(-1)}><Minus className="h-4 w-4" /></Button>
-                  <span className="w-8 text-center font-medium text-lg">{pattyQuantity}</span>
-                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handlePattyQuantityChange(1)}><Plus className="h-4 w-4" /></Button>
-                </div>
-              )}
-            </div>
 
-            {/* Toppings Section */}
-            <div>
-              <Label className="flex items-center gap-2 mb-2 font-medium"><Carrot className="h-5 w-5 text-muted-foreground" />Add Toppings</Label>
-              <div className="space-y-3 rounded-md border p-3 shadow-inner bg-background/50">
-                {toppings.map((topping) => (
-                  <div key={topping.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30">
-                    <Label htmlFor={`topping-qty-${topping.id}`} className="font-normal">{topping.name}</Label>
-                    <div className="flex items-center gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleToppingQuantityChange(topping.id, -1)}><Minus className="h-4 w-4" /></Button>
-                      <span id={`topping-qty-${topping.id}`} className="w-8 text-center font-medium text-lg">{toppingQuantities[topping.id] || 0}</span>
-                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleToppingQuantityChange(topping.id, 1)}><Plus className="h-4 w-4" /></Button>
-                    </div>
+              {/* Patties Section */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 font-medium"><PattyIcon className="h-5 w-5 text-muted-foreground" />Choose a Patty</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <RadioGroup value={selectedPattyId ?? ''} onValueChange={handlePattySelection} className="contents">
+                    {patties.map(patty => (
+                      <Label key={patty.id} htmlFor={patty.id} className="flex min-h-[44px] items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
+                        <RadioGroupItem value={patty.id} id={patty.id} />
+                        <span>{patty.name}</span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+                {selectedPattyId && (
+                  <div className="flex items-center gap-3 mt-3 justify-center p-2 border rounded-md max-w-xs mx-auto">
+                    <span className="font-medium">Quantity:</span>
+                    <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handlePattyQuantityChange(-1)} aria-label="Decrease patty quantity"><Minus className="h-4 w-4" /></Button>
+                    <span className="w-10 text-center font-medium text-lg" aria-live="polite">{pattyQuantity}</span>
+                    <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handlePattyQuantityChange(1)} aria-label="Increase patty quantity"><Plus className="h-4 w-4" /></Button>
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Toppings Section */}
+              <div>
+                <Label className="flex items-center gap-2 mb-2 font-medium"><Carrot className="h-5 w-5 text-muted-foreground" />Add Toppings</Label>
+                <div className="space-y-2 rounded-md border p-3 shadow-inner bg-background/50">
+                  {toppings.length === 0 && (
+                    <p className="text-sm text-muted-foreground py-2 text-center">No toppings available. Add some in the previous step.</p>
+                  )}
+                  {toppings.map((topping) => (
+                    <div key={topping.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30">
+                      <Label htmlFor={`topping-qty-${topping.id}`} className="font-normal">{topping.name}</Label>
+                      <div className="flex items-center gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleToppingQuantityChange(topping.id, -1)} aria-label={`Less ${topping.name}`}><Minus className="h-4 w-4" /></Button>
+                        <span id={`topping-qty-${topping.id}`} className="w-10 text-center font-medium text-lg" aria-live="polite">{toppingQuantities[topping.id] || 0}</span>
+                        <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleToppingQuantityChange(topping.id, 1)} aria-label={`More ${topping.name}`}><Plus className="h-4 w-4" /></Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </ScrollArea>
-          
-          <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg py-3">
-            <BurgerIcon className="mr-2 h-5 w-5" /> Add This Burger to Order
-          </Button>
-        </form>
-      </CardContent>
-      <CardFooter className="pt-6 flex flex-col sm:flex-row justify-between gap-3">
-        <Button variant="outline" onClick={onGoBack} className="w-full sm:w-auto"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ingredients</Button>
-        <Button onClick={onOrderReady} className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">Order Ready <PackageCheck className="ml-2 h-4 w-4" /></Button>
-      </CardFooter>
-    </Card>
+
+            <Button type="submit" className="w-full text-base h-12">
+              <BurgerIcon className="mr-2 h-5 w-5" /> Add This Burger to Order
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="pt-6 flex flex-col sm:flex-row justify-between gap-3">
+          <Button variant="outline" onClick={onGoBack} className="w-full sm:w-auto h-11"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ingredients</Button>
+          <Button onClick={onOrderReady} className="w-full sm:w-auto h-11 bg-accent text-accent-foreground hover:bg-accent/90">Order Ready <PackageCheck className="ml-2 h-4 w-4" /></Button>
+        </CardFooter>
+      </Card>
+
+      {/* Desktop sticky live preview */}
+      <div className="hidden lg:block lg:sticky lg:top-6">
+        <BurgerPreview
+          personName={personName}
+          bunName={selectedBun?.name}
+          pattyName={selectedPatty?.name}
+          pattyQuantity={pattyQuantity}
+          toppings={previewToppings}
+        />
+      </div>
+    </div>
   );
 };
 

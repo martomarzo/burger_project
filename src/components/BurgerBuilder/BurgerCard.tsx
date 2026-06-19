@@ -2,11 +2,22 @@
 
 import type { Burger } from '@/lib/types';
 import React from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Wheat, Carrot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import PattyIcon from './PattyIcon';
 import BurgerIcon from './BurgerIcon';
 
@@ -27,15 +38,10 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
   return (
     <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <BurgerIcon className="h-6 w-6 text-primary" />
-            {burger.personName}'s Burger Order
-          </CardTitle>
-          <Button variant="ghost" size="icon" className="text-primary hover:text-primary/90" onClick={() => onRemove(burger.id)} aria-label={`Mark ${burger.personName}'s burger as delivered`}>
-            <CheckCircle2 className="h-5 w-5" />
-          </Button>
-        </div>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <BurgerIcon className="h-6 w-6 shrink-0 text-primary" />
+          <span className="truncate">{burger.personName}&rsquo;s Burger</span>
+        </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
         {/* Bun */}
@@ -52,32 +58,52 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
           <span className="text-sm">{burger.patty.name}</span>
           {burger.patty.quantity > 1 && <Badge variant="outline">x{burger.patty.quantity}</Badge>}
         </div>
-        
+
         <Separator />
 
         {/* Toppings */}
         <div>
-            <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                <Carrot className="h-4 w-4 text-muted-foreground" />
-                Toppings:
-            </h4>
-            {burger.toppings.length > 0 ? (
+          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+            <Carrot className="h-4 w-4 text-muted-foreground" />
+            Toppings:
+          </h4>
+          {burger.toppings.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-                {burger.toppings.map((topping) => (
+              {burger.toppings.map((topping) => (
                 <Badge key={topping.id} variant={getToppingBadgeVariant(topping.name)} className="px-3 py-1 text-sm">
-                    {topping.name}
-                    {topping.quantity > 1 && <span className="ml-1.5 opacity-80 text-xs font-semibold">(x{topping.quantity})</span>}
+                  {topping.name}
+                  {topping.quantity > 1 && <span className="ml-1.5 opacity-80 text-xs font-semibold">(x{topping.quantity})</span>}
                 </Badge>
-                ))}
+              ))}
             </div>
-            ) : (
+          ) : (
             <p className="text-sm text-muted-foreground">No extra toppings.</p>
-            )}
+          )}
         </div>
       </CardContent>
-      <CardFooter>
-        <p className="text-xs text-muted-foreground">Order ID: {burger.id}</p>
-      </CardFooter>
+      <div className="p-4 pt-0">
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="w-full h-11">
+              <CheckCircle2 className="mr-2 h-4 w-4 text-primary" /> Mark Delivered
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Mark {burger.personName}&rsquo;s burger delivered?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This removes the order from the list. You can&rsquo;t undo this.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => onRemove(burger.id)}>
+                Mark Delivered
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </Card>
   );
 };
