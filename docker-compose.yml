@@ -2,11 +2,11 @@ services:
   ts-burger-project:
     image: tailscale/tailscale:latest
     container_name: ts-burger-project
-    hostname: burger-project               # -> burger-project.<tailnet>.ts.net
+    hostname: burger                       # -> burger.<tailnet>.ts.net
     restart: unless-stopped
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
-      - TS_HOSTNAME=burger-project
+      - TS_HOSTNAME=burger
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=true                  # serve works in userspace, no tun device
       - TS_SERVE_CONFIG=/config/serve.json
