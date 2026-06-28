@@ -19,7 +19,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) => {
           const step = i + 1;
           const isDone = step < currentStep;
           const isCurrent = step === currentStep;
-          const canNavigate = !!onStepClick && step <= currentStep;
+          const canNavigate = !!onStepClick;
           return (
             <li key={label} className="flex items-center gap-2 sm:gap-4">
               <button
@@ -29,7 +29,7 @@ const Stepper: React.FC<StepperProps> = ({ currentStep, onStepClick }) => {
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
                   'flex items-center gap-2 rounded-full px-1 py-1 transition-colors',
-                  canNavigate ? 'cursor-pointer' : 'cursor-default'
+                  canNavigate ? 'cursor-pointer hover:bg-muted' : 'cursor-default'
                 )}
               >
                 <span

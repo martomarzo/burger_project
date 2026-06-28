@@ -10,6 +10,7 @@ import BurgerCreator from '@/components/BurgerBuilder/BurgerCreator';
 import BurgerList from '@/components/BurgerBuilder/BurgerList';
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function BurgerBuilderPage() {
   const [availableIngredients, setAvailableIngredients] = useSyncedState<Ingredient[]>('burgerIngredients', [], 'ingredients');
@@ -81,16 +82,16 @@ export default function BurgerBuilderPage() {
     });
   };
 
-  // Allow jumping back to an already-completed step via the stepper.
+  // Stepper allows free navigation between all three stages.
   const handleStepClick = (step: number) => {
-    if (step < currentStep) setCurrentStep(step);
+    setCurrentStep(step);
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground antialiased">
       <AppHeader />
       <main className="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-5xl mx-auto">
+        <div className={cn('w-full mx-auto', currentStep === 1 ? 'max-w-6xl' : 'max-w-5xl')}>
           <Stepper currentStep={currentStep} onStepClick={handleStepClick} />
 
           {currentStep === 1 && (

@@ -3,8 +3,8 @@
 import type { Ingredient } from '@/lib/types';
 import React, { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Trash2, ArrowRight, Wheat, Carrot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -24,12 +24,12 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
   const [newIngredientAmount, setNewIngredientAmount] = useState('');
   const { toast } = useToast();
 
-  // Parse a stock-amount input: blank means unlimited; otherwise a positive integer.
+  // Parse a stock-amount input: blank means unlimited; 0 hides the item; otherwise a positive integer.
   const parseAmount = (raw: string): { amount?: number; error?: string } => {
     const trimmed = raw.trim();
     if (trimmed === '') return { amount: undefined };
     const n = Number(trimmed);
-    if (!Number.isInteger(n) || n < 1) return { error: 'Amount must be a whole number of 1 or more (leave blank for unlimited).' };
+    if (!Number.isInteger(n) || n < 0) return { error: 'Amount must be a whole number of 0 or more (leave blank for unlimited).' };
     return { amount: n };
   };
 
@@ -64,10 +64,10 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
     });
   };
 
-  // Edit stock for an existing ingredient: blank input clears the limit (unlimited).
+  // Edit stock for an existing ingredient: blank clears the limit (unlimited); 0 hides it.
   const updateIngredientAmount = (ingredientId: string, raw: string) => {
     const trimmed = raw.trim();
-    const next = trimmed === '' ? undefined : Math.max(1, Math.floor(Number(trimmed) || 1));
+    const next = trimmed === '' ? undefined : Math.max(0, Math.floor(Number(trimmed) || 0));
     setAvailableIngredients(prev =>
       prev.map(i => {
         if (i.id !== ingredientId) return i;
@@ -132,60 +132,71 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
             </Select>
             <Input
               type="number"
-              min={1}
+              min={0}
               value={newIngredientAmount}
               onChange={(e) => setNewIngredientAmount(e.target.value)}
               placeholder="Qty (∞)"
               aria-label="Stock amount (leave blank for unlimited)"
               className="w-full sm:w-[120px]"
             />
-            <Button type="submit" variant="default" size="icon" aria-label="Add ingredient" className="w-full sm:w-auto">
-              <PlusCircle />
+            <Button type="submit" variant="default" className="w-full sm:w-auto">
+              <PlusCircle className="mr-2 h-4 w-4" /> Add
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Set a stock amount to limit how many can be used (e.g. 2 brioche buns). Leave the quantity blank for unlimited.
+            Set a stock amount to limit how many can be used (e.g. 2 brioche buns). Use <strong>0</strong> to hide an item, or leave blank for unlimited (∞).
           </p>
         </form>
-        <div className="mt-6 max-h-[55dvh] overflow-y-auto pr-1">
-          {Object.keys(groupedIngredients).length === 0 ? (
-            <p className="text-sm text-center py-8 text-muted-foreground">No ingredients added yet. Add some above!</p>
-          ) : (
-            <div className="space-y-6">
-              {(['bun', 'patty', 'topping'] as const).map(category =>
-                groupedIngredients[category]?.length > 0 && (
-                  <div key={category}>
-                    <h4 className="font-medium text-md text-foreground/80 mb-2 flex items-center capitalize">
-                      {categoryIcons[category]} {category}s
-                    </h4>
-                    <ul className="space-y-2 rounded-md border p-2 shadow-inner bg-background/50">
-                      {groupedIngredients[category].map((ingredient) => (
-                        <li key={ingredient.id} className="flex items-center justify-between gap-2 p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
-                          <Badge variant="secondary" className="text-sm shrink-0">{ingredient.name}</Badge>
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor={`amount-${ingredient.id}`} className="text-xs text-muted-foreground">Stock</Label>
-                            <Input
-                              id={`amount-${ingredient.id}`}
-                              type="number"
-                              min={1}
-                              value={ingredient.amount ?? ''}
-                              onChange={(e) => updateIngredientAmount(ingredient.id, e.target.value)}
-                              placeholder="∞"
-                              aria-label={`Stock amount for ${ingredient.name} (blank for unlimited)`}
-                              className="h-9 w-20"
-                            />
-                            <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {(['bun', 'patty', 'topping'] as const).map(category => {
+            const items = groupedIngredients[category] ?? [];
+            return (
+              <div key={category} className="rounded-lg border bg-background/50 p-3 shadow-inner">
+                <div className="mb-3 flex items-center justify-between">
+                  <h4 className="flex items-center font-medium capitalize text-foreground/80">
+                    {categoryIcons[category]} {category}s
+                  </h4>
+                  <Badge variant="outline" className="tabular-nums">{items.length}</Badge>
+                </div>
+                {items.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-muted-foreground">No {category}s yet.</p>
+                ) : (
+                  <ul className="space-y-1.5 lg:max-h-[60dvh] lg:overflow-y-auto lg:pr-1">
+                    {items.map((ingredient) => {
+                      const hidden = ingredient.amount === 0;
+                      return (
+                        <li
+                          key={ingredient.id}
+                          className={cn(
+                            'flex items-center gap-2 rounded-md p-1.5 hover:bg-muted/40 transition-colors',
+                            hidden && 'opacity-60'
+                          )}
+                        >
+                          <span className="flex-grow truncate text-sm font-medium">
+                            {ingredient.name}
+                            {hidden && <span className="ml-2 text-xs font-normal text-destructive">hidden</span>}
+                          </span>
+                          <Input
+                            id={`amount-${ingredient.id}`}
+                            type="number"
+                            min={0}
+                            value={ingredient.amount ?? ''}
+                            onChange={(e) => updateIngredientAmount(ingredient.id, e.target.value)}
+                            placeholder="∞"
+                            aria-label={`Stock amount for ${ingredient.name} (blank for unlimited, 0 to hide)`}
+                            className="h-9 w-16"
+                          />
+                          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </li>
-                      ))}
-                    </ul>
-                  </div>
-                )
-              )}
-            </div>
-          )}
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
         </div>
       </CardContent>
       <CardFooter className="pt-6">
