@@ -104,6 +104,7 @@ export default function BurgerBuilderPage() {
           {currentStep === 2 && (
             <BurgerCreator
               availableIngredients={availableIngredients}
+              burgers={burgers}
               addBurger={addBurger}
               onGoBack={handleBackToIngredients}
               onOrderReady={handleOrderReady}

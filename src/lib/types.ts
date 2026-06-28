@@ -2,6 +2,8 @@ export interface Ingredient {
   id: string;
   name: string;
   category: 'bun' | 'patty' | 'topping';
+  /** Units in stock. Omitted/undefined means unlimited (untracked). */
+  amount?: number;
 }
 
 export interface BurgerTopping {

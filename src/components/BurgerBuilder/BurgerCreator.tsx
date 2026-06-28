@@ -12,15 +12,17 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import PattyIcon from './PattyIcon';
 import BurgerIcon from './BurgerIcon';
 import BurgerPreview, { type PreviewTopping } from './BurgerPreview';
+import { getConsumedCounts, remainingFor, isUnlimited } from '@/lib/inventory';
 
 interface BurgerCreatorProps {
   availableIngredients: Ingredient[];
+  burgers: Burger[];
   addBurger: (burger: Burger) => void;
   onGoBack: () => void;
   onOrderReady: () => void;
 }
 
-const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, addBurger, onGoBack, onOrderReady }) => {
+const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, burgers, addBurger, onGoBack, onOrderReady }) => {
   const [personName, setPersonName] = useState('');
   const [selectedBunId, setSelectedBunId] = useState<string | null>(null);
   const [selectedPattyId, setSelectedPattyId] = useState<string | null>(null);
@@ -28,17 +30,23 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
   const [toppingQuantities, setToppingQuantities] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
+  // Units already used by burgers in the order; drives what's still in stock.
+  const consumed = useMemo(() => getConsumedCounts(burgers), [burgers]);
+  const remainingOf = (ingredient: Ingredient) => remainingFor(ingredient, consumed);
+
+  // Only ingredients with stock left are offered; depleted ones disappear.
   const { buns, patties, toppings } = useMemo(() => {
     const grouped = availableIngredients.reduce((acc, ingredient) => {
       (acc[ingredient.category] = acc[ingredient.category] || []).push(ingredient);
       return acc;
     }, {} as Record<Ingredient['category'], Ingredient[]>);
+    const inStock = (i: Ingredient) => remainingFor(i, consumed) >= 1;
     return {
-      buns: grouped.bun || [],
-      patties: grouped.patty || [],
-      toppings: grouped.topping || [],
+      buns: (grouped.bun || []).filter(inStock),
+      patties: (grouped.patty || []).filter(inStock),
+      toppings: (grouped.topping || []).filter(inStock),
     };
-  }, [availableIngredients]);
+  }, [availableIngredients, consumed]);
 
   // Resolved selections drive the live preview.
   const selectedBun = buns.find(b => b.id === selectedBunId) || null;
@@ -68,13 +76,16 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
   };
 
   const handlePattyQuantityChange = (change: 1 | -1) => {
-    setPattyQuantity(prev => Math.max(1, prev + change));
+    const max = selectedPatty ? remainingOf(selectedPatty) : 1;
+    setPattyQuantity(prev => Math.min(max, Math.max(1, prev + change)));
   };
 
   const handleToppingQuantityChange = (toppingId: string, change: 1 | -1) => {
+    const topping = toppings.find(t => t.id === toppingId);
+    const max = topping ? remainingOf(topping) : 0;
     setToppingQuantities(prev => {
       const currentQuantity = prev[toppingId] || 0;
-      const newQuantity = Math.max(0, currentQuantity + change);
+      const newQuantity = Math.min(max, Math.max(0, currentQuantity + change));
       const newQuantities = { ...prev };
       if (newQuantity === 0) {
         delete newQuantities[toppingId];
@@ -99,6 +110,25 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
     const pattyInfo = patties.find(p => p.id === selectedPattyId);
     if (!pattyInfo) {
       toast({ title: 'Missing Patty', description: 'Please select a patty and quantity.', variant: 'destructive'});
+      return;
+    }
+
+    // Re-check stock at commit time (the order may have changed in another tab).
+    if (remainingOf(bun) < 1) {
+      toast({ title: 'Out of Stock', description: `There are no more "${bun.name}" buns left.`, variant: 'destructive' });
+      return;
+    }
+    if (pattyQuantity > remainingOf(pattyInfo)) {
+      toast({ title: 'Not Enough Stock', description: `Only ${remainingOf(pattyInfo)} "${pattyInfo.name}" left.`, variant: 'destructive' });
+      return;
+    }
+    const overTopping = Object.entries(toppingQuantities).find(([id, qty]) => {
+      const t = toppings.find(tp => tp.id === id);
+      return t && qty > remainingOf(t);
+    });
+    if (overTopping) {
+      const t = toppings.find(tp => tp.id === overTopping[0])!;
+      toast({ title: 'Not Enough Stock', description: `Only ${remainingOf(t)} "${t.name}" left.`, variant: 'destructive' });
       return;
     }
 
@@ -152,9 +182,13 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
                     <Label key={bun.id} htmlFor={bun.id} className="flex min-h-[44px] items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
                       <RadioGroupItem value={bun.id} id={bun.id} />
                       <span>{bun.name}</span>
+                      {!isUnlimited(bun) && <span className="ml-auto text-xs text-muted-foreground">{remainingOf(bun)} left</span>}
                     </Label>
                   ))}
                 </RadioGroup>
+                {buns.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-2">All buns are used up. Add more stock in the previous step.</p>
+                )}
               </div>
 
               {/* Patties Section */}
@@ -166,16 +200,20 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
                       <Label key={patty.id} htmlFor={patty.id} className="flex min-h-[44px] items-center space-x-2 border rounded-md p-3 cursor-pointer hover:bg-muted/50 has-[input:checked]:bg-accent has-[input:checked]:text-accent-foreground has-[input:checked]:border-ring">
                         <RadioGroupItem value={patty.id} id={patty.id} />
                         <span>{patty.name}</span>
+                        {!isUnlimited(patty) && <span className="ml-auto text-xs text-muted-foreground">{remainingOf(patty)} left</span>}
                       </Label>
                     ))}
                   </RadioGroup>
                 </div>
-                {selectedPattyId && (
+                {patties.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-2">All patties are used up. Add more stock in the previous step.</p>
+                )}
+                {selectedPattyId && selectedPatty && (
                   <div className="flex items-center gap-3 mt-3 justify-center p-2 border rounded-md max-w-xs mx-auto">
                     <span className="font-medium">Quantity:</span>
                     <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handlePattyQuantityChange(-1)} aria-label="Decrease patty quantity"><Minus className="h-4 w-4" /></Button>
                     <span className="w-10 text-center font-medium text-lg" aria-live="polite">{pattyQuantity}</span>
-                    <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handlePattyQuantityChange(1)} aria-label="Increase patty quantity"><Plus className="h-4 w-4" /></Button>
+                    <Button type="button" variant="outline" size="icon" className="h-11 w-11" disabled={pattyQuantity >= remainingOf(selectedPatty)} onClick={() => handlePattyQuantityChange(1)} aria-label="Increase patty quantity"><Plus className="h-4 w-4" /></Button>
                   </div>
                 )}
               </div>
@@ -189,11 +227,14 @@ const BurgerCreator: React.FC<BurgerCreatorProps> = ({ availableIngredients, add
                   )}
                   {toppings.map((topping) => (
                     <div key={topping.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30">
-                      <Label htmlFor={`topping-qty-${topping.id}`} className="font-normal">{topping.name}</Label>
+                      <Label htmlFor={`topping-qty-${topping.id}`} className="font-normal">
+                        {topping.name}
+                        {!isUnlimited(topping) && <span className="ml-2 text-xs text-muted-foreground">({remainingOf(topping)} left)</span>}
+                      </Label>
                       <div className="flex items-center gap-2">
                         <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleToppingQuantityChange(topping.id, -1)} aria-label={`Less ${topping.name}`}><Minus className="h-4 w-4" /></Button>
                         <span id={`topping-qty-${topping.id}`} className="w-10 text-center font-medium text-lg" aria-live="polite">{toppingQuantities[topping.id] || 0}</span>
-                        <Button type="button" variant="outline" size="icon" className="h-11 w-11" onClick={() => handleToppingQuantityChange(topping.id, 1)} aria-label={`More ${topping.name}`}><Plus className="h-4 w-4" /></Button>
+                        <Button type="button" variant="outline" size="icon" className="h-11 w-11" disabled={(toppingQuantities[topping.id] || 0) >= remainingOf(topping)} onClick={() => handleToppingQuantityChange(topping.id, 1)} aria-label={`More ${topping.name}`}><Plus className="h-4 w-4" /></Button>
                       </div>
                     </div>
                   ))}

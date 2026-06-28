@@ -3,6 +3,7 @@
 import type { Ingredient } from '@/lib/types';
 import React, { useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle, Trash2, ArrowRight, Wheat, Carrot } from 'lucide-react';
@@ -20,7 +21,17 @@ interface IngredientManagerProps {
 const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredients, setAvailableIngredients, onNext }) => {
   const [newIngredientName, setNewIngredientName] = useState('');
   const [newIngredientCategory, setNewIngredientCategory] = useState<'bun' | 'patty' | 'topping'>('topping');
+  const [newIngredientAmount, setNewIngredientAmount] = useState('');
   const { toast } = useToast();
+
+  // Parse a stock-amount input: blank means unlimited; otherwise a positive integer.
+  const parseAmount = (raw: string): { amount?: number; error?: string } => {
+    const trimmed = raw.trim();
+    if (trimmed === '') return { amount: undefined };
+    const n = Number(trimmed);
+    if (!Number.isInteger(n) || n < 1) return { error: 'Amount must be a whole number of 1 or more (leave blank for unlimited).' };
+    return { amount: n };
+  };
 
   const handleAddIngredient = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,15 +43,40 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
       toast({ title: 'Error', description: `Ingredient "${newIngredientName.trim()}" already exists.`, variant: 'destructive' });
       return;
     }
+    const { amount, error } = parseAmount(newIngredientAmount);
+    if (error) {
+      toast({ title: 'Invalid Amount', description: error, variant: 'destructive' });
+      return;
+    }
 
     const newIngredient: Ingredient = {
       id: Date.now().toString(),
       name: newIngredientName.trim(),
       category: newIngredientCategory,
+      ...(amount !== undefined ? { amount } : {}),
     };
     setAvailableIngredients(prev => [...prev, newIngredient].sort((a, b) => a.category.localeCompare(b.category)));
     setNewIngredientName('');
-    toast({ title: 'Success!', description: `Ingredient "${newIngredient.name}" added to ${newIngredient.category}s.` });
+    setNewIngredientAmount('');
+    toast({
+      title: 'Success!',
+      description: `Ingredient "${newIngredient.name}" added to ${newIngredient.category}s${amount !== undefined ? ` (${amount} in stock)` : ''}.`,
+    });
+  };
+
+  // Edit stock for an existing ingredient: blank input clears the limit (unlimited).
+  const updateIngredientAmount = (ingredientId: string, raw: string) => {
+    const trimmed = raw.trim();
+    const next = trimmed === '' ? undefined : Math.max(1, Math.floor(Number(trimmed) || 1));
+    setAvailableIngredients(prev =>
+      prev.map(i => {
+        if (i.id !== ingredientId) return i;
+        const updated = { ...i };
+        if (next === undefined) delete updated.amount;
+        else updated.amount = next;
+        return updated;
+      })
+    );
   };
 
   const handleDeleteIngredient = (ingredientId: string) => {
@@ -94,10 +130,22 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
                 <SelectItem value="topping">Topping</SelectItem>
               </SelectContent>
             </Select>
+            <Input
+              type="number"
+              min={1}
+              value={newIngredientAmount}
+              onChange={(e) => setNewIngredientAmount(e.target.value)}
+              placeholder="Qty (∞)"
+              aria-label="Stock amount (leave blank for unlimited)"
+              className="w-full sm:w-[120px]"
+            />
             <Button type="submit" variant="default" size="icon" aria-label="Add ingredient" className="w-full sm:w-auto">
               <PlusCircle />
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Set a stock amount to limit how many can be used (e.g. 2 brioche buns). Leave the quantity blank for unlimited.
+          </p>
         </form>
         <div className="mt-6 max-h-[55dvh] overflow-y-auto pr-1">
           {Object.keys(groupedIngredients).length === 0 ? (
@@ -112,11 +160,24 @@ const IngredientManager: React.FC<IngredientManagerProps> = ({ availableIngredie
                     </h4>
                     <ul className="space-y-2 rounded-md border p-2 shadow-inner bg-background/50">
                       {groupedIngredients[category].map((ingredient) => (
-                        <li key={ingredient.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
-                          <Badge variant="secondary" className="text-sm">{ingredient.name}</Badge>
-                          <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        <li key={ingredient.id} className="flex items-center justify-between gap-2 p-2 rounded-md hover:bg-muted/30 transition-colors duration-150">
+                          <Badge variant="secondary" className="text-sm shrink-0">{ingredient.name}</Badge>
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor={`amount-${ingredient.id}`} className="text-xs text-muted-foreground">Stock</Label>
+                            <Input
+                              id={`amount-${ingredient.id}`}
+                              type="number"
+                              min={1}
+                              value={ingredient.amount ?? ''}
+                              onChange={(e) => updateIngredientAmount(ingredient.id, e.target.value)}
+                              placeholder="∞"
+                              aria-label={`Stock amount for ${ingredient.name} (blank for unlimited)`}
+                              className="h-9 w-20"
+                            />
+                            <Button variant="ghost" size="icon" className="h-11 w-11 text-destructive hover:text-destructive/80" onClick={() => handleDeleteIngredient(ingredient.id)} aria-label={`Delete ${ingredient.name}`}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </li>
                       ))}
                     </ul>
