@@ -5,8 +5,10 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, Wheat, Carrot } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,72 +22,103 @@ import {
 } from '@/components/ui/alert-dialog';
 import PattyIcon from './PattyIcon';
 import BurgerIcon from './BurgerIcon';
+import { getPrepItems, type PrepIcon } from '@/lib/burger-prep';
 
 interface BurgerCardProps {
   burger: Burger;
+  prepared: string[];
+  onTogglePrepared: (burgerId: string, itemKey: string) => void;
   onRemove: (burgerId: string) => void;
 }
 
-const getToppingBadgeVariant = (toppingName: string): "default" | "secondary" | "destructive" | "outline" => {
-  const lowerName = toppingName.toLowerCase();
-  if (lowerName.includes('cheese') || lowerName.includes('onion')) return 'secondary';
-  if (lowerName.includes('tomato') || lowerName.includes('bacon') || lowerName.includes('pepperoni')) return 'destructive';
-  if (lowerName.includes('lettuce') || lowerName.includes('pickle') || lowerName.includes('avocado')) return 'default';
-  return 'outline';
-}
+const PrepLineIcon: React.FC<{ icon: PrepIcon; className?: string }> = ({ icon, className }) => {
+  if (icon === 'bun') return <Wheat className={className} />;
+  if (icon === 'patty') return <PattyIcon className={className} />;
+  return <Carrot className={className} />;
+};
 
-const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
+const BurgerCard: React.FC<BurgerCardProps> = ({ burger, prepared, onTogglePrepared, onRemove }) => {
+  const items = getPrepItems(burger);
+  const checked = new Set(prepared);
+  const doneCount = items.filter((i) => checked.has(i.key)).length;
+  const complete = items.length > 0 && doneCount === items.length;
+  const progress = items.length > 0 ? (doneCount / items.length) * 100 : 0;
+
   return (
-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col h-full">
+    <Card
+      className={cn(
+        'shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col h-full',
+        complete && 'border-primary ring-1 ring-primary'
+      )}
+    >
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <BurgerIcon className="h-6 w-6 shrink-0 text-primary" />
-          <span className="truncate">{burger.personName}&rsquo;s Burger</span>
+          <span className="truncate flex-grow">{burger.personName}&rsquo;s Burger</span>
+          {complete && (
+            <Badge variant="default" className="shrink-0">
+              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Ready
+            </Badge>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-grow space-y-3">
-        {/* Bun */}
-        <div className="flex items-center gap-2">
-          <Wheat className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">Bun:</span>
-          <span className="text-sm">{burger.bun.name}</span>
+        {/* Prep progress */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="font-medium">Prep checklist</span>
+            <span className="text-muted-foreground tabular-nums">
+              {doneCount}/{items.length} prepared
+            </span>
+          </div>
+          <Progress value={progress} className="h-2" />
         </div>
 
-        {/* Patty */}
-        <div className="flex items-center gap-2">
-          <PattyIcon className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium">Patty:</span>
-          <span className="text-sm">{burger.patty.name}</span>
-          {burger.patty.quantity > 1 && <Badge variant="outline">x{burger.patty.quantity}</Badge>}
-        </div>
-
-        <Separator />
-
-        {/* Toppings */}
-        <div>
-          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-            <Carrot className="h-4 w-4 text-muted-foreground" />
-            Toppings:
-          </h4>
-          {burger.toppings.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {burger.toppings.map((topping) => (
-                <Badge key={topping.id} variant={getToppingBadgeVariant(topping.name)} className="px-3 py-1 text-sm">
-                  {topping.name}
-                  {topping.quantity > 1 && <span className="ml-1.5 opacity-80 text-xs font-semibold">(x{topping.quantity})</span>}
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No extra toppings.</p>
-          )}
+        {/* Checklist */}
+        <div className="space-y-1">
+          {items.map((item) => {
+            const isChecked = checked.has(item.key);
+            const inputId = `${burger.id}-${item.key}`;
+            return (
+              <label
+                key={item.key}
+                htmlFor={inputId}
+                className="flex items-center gap-3 rounded-md -mx-2 px-2 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <Checkbox
+                  id={inputId}
+                  checked={isChecked}
+                  onCheckedChange={() => onTogglePrepared(burger.id, item.key)}
+                  className="h-5 w-5"
+                />
+                <PrepLineIcon icon={item.icon} className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span
+                  className={cn(
+                    'text-sm flex-grow',
+                    isChecked && 'line-through text-muted-foreground'
+                  )}
+                >
+                  {item.label}
+                </span>
+                {item.quantity > 1 && (
+                  <Badge variant="outline" className="shrink-0">
+                    x{item.quantity}
+                  </Badge>
+                )}
+              </label>
+            );
+          })}
         </div>
       </CardContent>
       <div className="p-4 pt-0">
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" className="w-full h-11">
-              <CheckCircle2 className="mr-2 h-4 w-4 text-primary" /> Mark Delivered
+            <Button
+              variant={complete ? 'default' : 'outline'}
+              className="w-full h-11"
+              disabled={!complete}
+            >
+              <CheckCircle2 className="mr-2 h-4 w-4" /> Mark Delivered
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
@@ -103,6 +136,11 @@ const BurgerCard: React.FC<BurgerCardProps> = ({ burger, onRemove }) => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        {!complete && (
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            Tick every ingredient to mark this burger delivered.
+          </p>
+        )}
       </div>
     </Card>
   );
